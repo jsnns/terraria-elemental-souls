@@ -1,0 +1,3 @@
+displayName = Elemental Souls
+author = Jacob and Rebecca
+version = 0.1
