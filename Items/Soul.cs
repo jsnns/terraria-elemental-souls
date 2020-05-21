@@ -14,7 +14,7 @@ namespace ElementalSouls.Items
     class IceSoul : Soul
     {
     } 
-
+     
     class FireSoul : Soul
     {
          
