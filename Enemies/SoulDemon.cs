@@ -7,13 +7,33 @@ using System.Threading.Tasks;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.ID;
+using ElementalSouls.Data;
+using Extensions;
+using System.CodeDom;
+using System.Security.Policy;
 
 namespace ElementalSouls.Enemies
 {
-    class IceSoulDemon : ModNPC
+    class BaseSoulDemon : ModNPC
     {
-
         private int lifeOfPlayer;
+        public Element elementalType;
+        public override string Texture => "ElementalSouls/Enemies/IceSoulDemon";
+
+        public virtual bool IsSpawned()
+        {
+            return NPC.AnyNPCs(ModContent.NPCType<BaseSoulDemon>());
+        }
+
+        public override void NPCLoot()
+        {
+            ElementalSoulsWorld.MarkSoulDemonDowned(elementalType);
+        }
+
+        public BaseSoulDemon()
+        {
+            elementalType = Element.None;
+        }
 
         public override void SetStaticDefaults()
         {
@@ -41,20 +61,26 @@ namespace ElementalSouls.Enemies
             // 1. there isn't another soul demon in the world
             // 2. the soul demon hasn't been killed for that biome
 
-            bool correctBiome = spawnInfo.player.ZoneSnow;
-            bool alreadySpawned = NPC.AnyNPCs(ModContent.NPCType<IceSoulDemon>());
-
+            Element currentElement = ElementData.fromPlayerLocation(spawnInfo.player);
+            
+            bool alreadySpawned = IsSpawned();
             int playerHealth = spawnInfo.player.statLifeMax;
 
-            if (correctBiome && !alreadySpawned)
+            if (elementalType.Equals(Element.None))
             {
-                lifeOfPlayer = spawnInfo.player.statLifeMax;
-                return 0.1f * (playerHealth / 100);
-            } else
-            {
+                // don't spawn if it's a generic demon soul. 
                 return 0.0f;
             }
+
+            if (elementalType != currentElement || alreadySpawned || ElementalSoulsWorld.IsSoulDemonDowned(elementalType))
+            {
+                return 0.0f;
+            } else {
+                lifeOfPlayer = spawnInfo.player.statLifeMax;
+                return 0.1f * (playerHealth / 50);
+            }
         }
+
 
         public override int SpawnNPC(int tileX, int tileY)
         {
@@ -65,10 +91,15 @@ namespace ElementalSouls.Enemies
 
             return base.SpawnNPC(tileX, tileY);
         }
+    }
 
-        public override void NPCLoot()
+    class IceSoulDemon : BaseSoulDemon
+    {
+        public IceSoulDemon()
         {
-            ElementalSoulsWorld.MarkIceSoulDemonDowned();
+            elementalType = Element.Ice;
         }
+
+        public override bool IsSpawned() => NPC.AnyNPCs(ModContent.NPCType<IceSoulDemon>());
     }
 }
